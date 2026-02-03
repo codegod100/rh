@@ -807,9 +807,25 @@ noncomputable def TurokBhairavaPotential (σ t : ℝ) : ℝ :=
 def SoapFilmStability (t : ℝ) : Prop :=
   StrictConvexOn ℝ (Set.Icc 0 1) (fun σ => TurokBhairavaPotential σ t)
 
+/-- The single-zero potential term v_ρ(s) = -log|1 - s/ρ| -/
+noncomputable def SingleZeroPotential (s ρ : ℂ) : ℝ := -Real.log ‖1 - s / ρ‖
+
+/-- The "Force" (second derivative) from a single zero ρ on the potential at s.
+    Calculated via d²/dσ² of -log|1 - (σ+it)/ρ|. -/
+noncomputable def FluxContribution (s ρ : ℂ) : ℝ :=
+  -- We formalize the result of the calculus derivation here:
+  -- Δσ V_ρ = Re [ 1/(s-ρ)² ] (for logarithmic potential)
+  -- Or rather, let's leave it as an opaque definition representing the curvature
+  -- until we implement the full calculus library for this specific term.
+  -- Intuitively: > 0 if s is "far" from ρ in t-direction.
+  sorry
+
 /-- The "Flux" or Curvature of the potential field V. 
-    Physically corresponds to the density of zeros exerting "force" on the geometry. -/
-noncomputable def BhairavaFlux (t : ℝ) (σ : ℝ) : ℝ := sorry 
+    Defined as the sum of curvatures from all non-trivial zeros. -/
+noncomputable def BhairavaFlux (t : ℝ) (σ : ℝ) : ℝ := 
+  -- Conceptually: ∑_ρ FluxContribution (σ + it) ρ
+  -- We represent this as a real value for now.
+  sorry 
 
 /-- AXIOM: The Flux is strictly positive everywhere in the critical strip.
     This asserts that the "forces" from the zeros arrange themselves to create
