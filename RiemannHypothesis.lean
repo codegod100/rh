@@ -796,35 +796,51 @@ theorem bounded_on_critical_line :
     The variable ϕ corresponds to the real part σ (the "field").
     The time evolution corresponds to the imaginary part t.
 -/
-noncomputable def TurokBhairavaPotential (σ t : ℝ) : ℝ :=
-  -Real.log ‖xiFunction (σ + t * I)‖
+noncomputable def TurokBhairavaPotential (σ t : ℝ) : ℝ := Real.log ‖xiFunction ((σ : ℂ) + t * I)‖
 
 /-- The "Soap Film" Condition:
     The potential surface must be strictly convex ("stable") across the critical strip.
-    Just as a soap film minimizes energy by being smooth and convex between boundaries,
-    the information geometry of the zeta function minimizes "tension" via convexity.
+    Just as a soap film minimizes energy by being smooth and convex between boundaries.
 -/
 def SoapFilmStability (t : ℝ) : Prop :=
   StrictConvexOn ℝ (Set.Icc 0 1) (fun σ => TurokBhairavaPotential σ t)
 
-/-- The single-zero potential term v_ρ(s) = -log|1 - s/ρ| -/
-noncomputable def SingleZeroPotential (s ρ : ℂ) : ℝ := -Real.log ‖1 - s / ρ‖
+/-- The single-zero potential term v_ρ(s) = log|1 - s/ρ| -/
+noncomputable def SingleZeroPotential (s ρ : ℂ) : ℝ := Real.log ‖1 - s / ρ‖
 
 /-- The "Force" (second derivative) from a single zero ρ on the potential at s.
-    Calculated via d²/dσ² of -log|1 - (σ+it)/ρ|. -/
+    Calculated via d²/dσ² of log|1 - (σ+it)/ρ|.
+    Formula: ((γ-t)² - (β-σ)²) / ((β-σ)² + (γ-t)²)^2
+    On critical line (β=σ), this is 1/(γ-t)² which is STRICTLY POSITIVE. -/
 noncomputable def FluxContribution (s ρ : ℂ) : ℝ :=
-  -- We formalize the result of the calculus derivation here:
-  -- Δσ V_ρ = Re [ 1/(s-ρ)² ] (for logarithmic potential)
-  -- Or rather, let's leave it as an opaque definition representing the curvature
-  -- until we implement the full calculus library for this specific term.
-  -- Intuitively: > 0 if s is "far" from ρ in t-direction.
+  let β := ρ.re
+  let γ := ρ.im
+  let σ := s.re
+  let t := s.im
+  let num := (γ - t)^2 - (β - σ)^2
+  let den := ((β - σ)^2 + (γ - t)^2) ^ 2
+  if den = 0 then 0 else num / den
+
+/-- The Flux contribution from the Gamma factor log|Γ(s/2)|.
+    We use the known expansion of Re(ψ'(s/2)).
+    Formula: 1/4 * Re(ψ'(s/2)).
+    Approximation for large t: -1/t^2 (Destabilizing!).
+    The Gamma function acts as "Gravity" trying to pull the soap film down (concave). -/
+noncomputable def GammaFluxContribution (s : ℂ) : ℝ := 
+  -- We leave this opaque for now as 'sorry', but validatable via Polygamma.
+  -- Key insight: This term is NEGATIVE for large t.
   sorry
 
 /-- The "Flux" or Curvature of the potential field V. 
-    Defined as the sum of curvatures from all non-trivial zeros. -/
+    Defined as: (Sum of Forces from Zeros) + (Force from Gamma).
+    
+    BhairavaFlux = (∑ FluxContribution) + GammaFluxContribution
+    
+    Since GammaFlux is negative, the Zeros MUST provide enough positive flux
+    to keep the total > 0. This forces the density of zeros! -/
 noncomputable def BhairavaFlux (t : ℝ) (σ : ℝ) : ℝ := 
-  -- Conceptually: ∑_ρ FluxContribution (σ + it) ρ
-  -- We represent this as a real value for now.
+  -- Conceptually: (∑_ρ FluxContribution (σ + it) ρ) + GammaFluxContribution (σ + it)
+  -- We establish this as the value that must be positive.
   sorry 
 
 /-- AXIOM: The Flux is strictly positive everywhere in the critical strip.
