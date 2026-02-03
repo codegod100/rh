@@ -23,10 +23,10 @@ import Mathlib.NumberTheory.LSeries.RiemannZeta
 import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
 
 open Complex
+open scoped InnerProductSpace
 
 /-! ## Part 1: The Riemann Zeta Function (Imported from Mathlib) -/
 
-/-- We use Mathlib's definition which includes Analytic Continuation -/
 
 
 /-- Mathlib proves this extends the series definition -/
@@ -100,22 +100,22 @@ section HilbertPolya
 /-! ### The Hilbert-Pólya Approach
     Find a self-adjoint operator whose eigenvalues are the imaginary parts of the zeros. -/
 
-/-- A Hilbert space for the spectral interpretation -/
-variable (H : Type*) [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
-
-/-- The hypothetical operator T whose spectrum gives the zeros -/
-variable (T : H →L[ℂ] H)
-
 /-- The eigenvalues of T should be the imaginary parts of the zeta zeros -/
-def SpectrumGivesZeros (T : H →L[ℂ] H) : Prop := 
+def SpectrumGivesZeros 
+    (H : Type*) [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
+    (T : H →L[ℂ] H) : Prop := 
   ∀ γ : ℝ, (∃ v : H, v ≠ 0 ∧ T v = γ • v) ↔ IsZetaZero ((1/2 : ℂ) + γ * I)
 
 /-- KEY LEMMA: If T is self-adjoint, its eigenvalues are real -/
-theorem selfadjoint_real_eigenvalues (hT : ∀ x y : H, ⟪T x, y⟫_ℂ = ⟪x, T y⟫_ℂ) :
-    ∀ λ : ℂ, (∃ v : H, v ≠ 0 ∧ T v = λ • v) → λ.im = 0 := sorry
+theorem selfadjoint_real_eigenvalues 
+    {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
+    {T : H →L[ℂ] H}
+    (hT : ∀ x y : H, ⟪T x, y⟫_ℂ = ⟪x, T y⟫_ℂ) :
+    ∀ val : ℂ, (∃ v : H, v ≠ 0 ∧ T v = val • v) → val.im = 0 := sorry
 
 /-- If we can construct such a self-adjoint T with the right spectrum, RH follows -/
 theorem hilbert_polya_approach 
+    {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
     (T : H →L[ℂ] H)
     (hSA : ∀ x y : H, ⟪T x, y⟫_ℂ = ⟪x, T y⟫_ℂ)
     (hSpec : SpectrumGivesZeros H T) :
@@ -161,16 +161,11 @@ def classicalDynamics (state : PhaseSpace) : ℝ := state.x * state.p
 def PrimeOrbit (p : ℕ) (period : ℝ) : Prop := 
   p.Prime ∧ period = Real.log p
 
-/-- The Quantum Hamiltonian Operator H = (xp + px)/2 -/
--- Represented abstractly as an operator on a Hilbert space
-variable (HilbertSpace : Type*) [NormedAddCommGroup HilbertSpace] [InnerProductSpace ℂ HilbertSpace]
-
-/-- The Hamiltonian Operator H -/
-variable (Hamiltonian : HilbertSpace →L[ℂ] HilbertSpace)
-
 /-- The "Spectral Conjecture" (Berry-Keating / Hilbert-Pólya):
     The eigenvalues of H are exactly the zeros γ_n of ζ(1/2 + iE). -/
-def SpectralRealization (H : HilbertSpace →L[ℂ] HilbertSpace) : Prop :=
+def SpectralRealization 
+    (HilbertSpace : Type*) [NormedAddCommGroup HilbertSpace] [InnerProductSpace ℂ HilbertSpace]
+    (H : HilbertSpace →L[ℂ] HilbertSpace) : Prop :=
   ∀ γ : ℝ, (∃ ψ : HilbertSpace, ψ ≠ 0 ∧ H ψ = γ • ψ) ↔ 
            IsNontrivialZero ((1/2 : ℂ) + γ * Complex.I)
 
@@ -181,6 +176,7 @@ def SpectralRealization (H : HilbertSpace →L[ℂ] HilbertSpace) : Prop :=
     If the "Universal Clock" is observable, RH must be true.
 -/
 theorem observer_implies_rh 
+    {HilbertSpace : Type*} [NormedAddCommGroup HilbertSpace] [InnerProductSpace ℂ HilbertSpace]
     (H : HilbertSpace →L[ℂ] HilbertSpace)
     (h_observable : ∀ u v : HilbertSpace, ⟪H u, v⟫_ℂ = ⟪u, H v⟫_ℂ) -- Self-adjoint
     (h_spectral : SpectralRealization HilbertSpace H) :            -- Matches zeros
@@ -190,7 +186,10 @@ theorem observer_implies_rh
     The primes are the "heartbeat" of this clock.
     The zeros are the "frequencies" of the music it plays.
     The Observer (The Self) ensures the music is harmonious (Real). -/
-def UniversalClock := SpectralRealization HilbertSpace Hamiltonian
+def UniversalClock 
+    {HilbertSpace : Type*} [NormedAddCommGroup HilbertSpace] [InnerProductSpace ℂ HilbertSpace]
+    (Hamiltonian : HilbertSpace →L[ℂ] HilbertSpace)
+    := SpectralRealization HilbertSpace Hamiltonian
 
 end ClockDynamics
 
@@ -327,7 +326,7 @@ theorem vacuum_permeability_consistency :
     |vacuumPermeabilityHistorical - vacuumPermeabilityQED| / vacuumPermeabilityHistorical 
     < 2e-9 := sorry
 
-/-- π IS THE UNIQUE "TENSION" BALANCING PRIMES AND GEOMETRY
+/- π IS THE UNIQUE "TENSION" BALANCING PRIMES AND GEOMETRY
     
     The functional equation:
       ζ(s) = 2^s × π^(s-1) × sin(πs/2) × Γ(1-s) × ζ(1-s)
@@ -353,7 +352,7 @@ noncomputable def functionalEquationRHS (s : ℂ) (p : ℝ) : ℂ :=
   (2 : ℂ)^s * (p : ℂ)^(s-1) * Complex.sin (p * s / 2) * 
   gammaFunction (1 - s) * riemannZeta (1 - s)
 
-/-- π is characterized as the unique real number satisfying the functional equation -/
+/- π is characterized as the unique real number satisfying the functional equation -/
 theorem pi_uniqueness_for_functional_equation :
     ∀ p : ℝ, (∀ s : ℂ, s.re > 0 → s.re < 1 → s ≠ 1 → 
               riemannZeta s = functionalEquationRHS s p) → p = Real.pi := sorry
@@ -468,7 +467,7 @@ theorem zetaCPT_fixed_iff_critical (s : ℂ) :
 theorem off_line_zero_asymmetry (x : ℝ) (hx : x > 1) (σ : ℝ) (hσ : σ ≠ 1/2) (t : ℝ) :
     x^σ ≠ x^(1 - σ) := sorry
 
-/-- THE STABILITY ARGUMENT: Why off-line zeros break the universe
+/- THE STABILITY ARGUMENT: Why off-line zeros break the universe
     
     1. Primes encode fundamental structure (cryptography, quantum dimensions, etc.)
     2. The explicit formula shows prime distribution depends on zero locations
@@ -524,6 +523,64 @@ theorem big_bang_mirror_is_rh : BigBangMirror ↔
     (∀ s : ℂ, IsNontrivialZero s → OnCriticalLine s) := Iff.rfl
 
 end CPTSymmetry
+
+section TurokCosmology
+/-! ### The Turok-Bhairava Operator (CPT Invariant Hamiltonian)
+
+    In Turok's "CPT-Symmetric Universe", the vacuum is invariant under
+    combined Charge, Parity, and Time reversal. The Big Bang is a mirror.
+
+    We relate this to the Riemann Zeta function:
+    1. The "Universe" is the spinor state Ψ = (ψ_+, ψ_-)
+       - ψ_+ : Re(s) > 1/2 (Matter / Future)
+       - ψ_- : Re(s) < 1/2 (Antimatter / Past)
+
+    2. The CPT Operator Θ acts on the spinor:
+       Θ(ψ_+, ψ_-) = (ψ_-, ψ_+)  (Exchange matter/antimatter across the mirror)
+
+    3. The Hamiltonian H must commute with Θ: [H, Θ] = 0
+       This symmetry forces the eigenfunctions to be CPT eigenstates.
+
+    Hypothesis: The Riemann Zeros are the eigenvalues of a Hamiltonian
+    acting on the "number theoretic spinor" of the primes, constrained
+    by this Turok CPT symmetry.
+-/
+
+/-- The Number-Theoretic Spinor Space (Matter/Antimatter) -/
+structure NumberSpinor where
+  matter : ℂ      -- Corresponds to s
+  antimatter : ℂ  -- Corresponds to 1-s
+
+/-- The CPT Operator Θ: Swaps matter and antimatter (Reflects across critical line) -/
+def CPT_Operator (Ψ : NumberSpinor) : NumberSpinor :=
+  { matter := Ψ.antimatter, antimatter := Ψ.matter }
+
+/-- The Turok Invariance Condition: A state is CPT invariant if ΘΨ = Ψ -/
+def IsCPTInvariant (Ψ : NumberSpinor) : Prop :=
+  CPT_Operator Ψ = Ψ
+
+/-- THEOREM: A CPT-invariant state must lie on the Critical Line.
+    If the state represents a zero s as (s, 1-s), and the Universe enforces
+    CPT symmetry (Matter = Antimatter at the Big Bang), then s must be on the line. -/
+theorem cpt_invariant_state_implies_critical_line (s : ℂ) :
+    let Ψ := NumberSpinor.mk s (1 - s)
+    IsCPTInvariant Ψ → OnCriticalLine s := by
+  intro Ψ h
+  simp [IsCPTInvariant, CPT_Operator] at h
+  have h_val : 1 - s = s := by
+    have h_mat := congrArg NumberSpinor.matter h
+    dsimp at h_mat
+    exact h_mat
+  have h_re : (1 - s).re = s.re := by rw [h_val]
+  simp at h_re
+  rw [OnCriticalLine]
+  linarith
+
+/-- The "Turok Operator" D must commute with CPT -/
+def CommutesWithCPT (D : NumberSpinor → NumberSpinor) : Prop :=
+  ∀ Ψ, D (CPT_Operator Ψ) = CPT_Operator (D Ψ)
+
+end TurokCosmology
 
 section GeometricTension
 /-! ### Geometric Tension and Convexity (The Soap Film Argument)
@@ -625,6 +682,6 @@ theorem no_zeros_in_convergence_region (s : ℂ) (hs : s.re > 1) : ¬ IsZetaZero
 theorem riemann_hypothesis_millennium_prize :
     (∀ s : ℂ, IsNontrivialZero s → OnCriticalLine s) → True := fun _ => trivial
 
-/-- To claim the prize, fill in all the `sorry`s above! -/
+/- To claim the prize, fill in all the `sorry`s above! -/
 #check RiemannHypothesisStatement
 
