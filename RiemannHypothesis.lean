@@ -469,7 +469,17 @@ theorem zetaCPT_involution (s : ℂ) : zetaCPT (zetaCPT s) = s := by
 
     /-- The fixed points of the reflection are exactly the critical line -/
 theorem zetaCPT_fixed_iff_critical (s : ℂ) :
-    zetaCPT s = star s ↔ s.re = 1/2 := sorry
+    zetaCPT s = star s ↔ s.re = 1/2 := by
+  dsimp [zetaCPT]
+  rw [Complex.ext_iff]
+  simp only [sub_re, one_re, sub_im, one_im, star_def, conj_re, conj_im, zero_sub]
+  constructor
+  · rintro ⟨hre, him⟩
+    linarith
+  · intro h
+    constructor
+    · linarith
+    · trivial
 
 /-- OFF-LINE ZEROS IMPLY ASYMMETRIC PRIME DISTRIBUTION
     
