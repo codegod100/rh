@@ -26,8 +26,7 @@ open Complex
 /-- The Riemann zeta function ζ(s) for Re(s) > 1, defined as the sum Σ n⁻ˢ.
     This is the region where the series converges absolutely. -/
 noncomputable def riemannZetaSeries (s : ℂ) : ℂ := 
-  -- In practice, this would be: ∑' n : ℕ+, (n : ℂ)^(-s)
-  sorry
+  ∑' n : ℕ, if n = 0 then 0 else (n : ℂ) ^ (-s)
 
 /-- The analytic continuation of ζ to ℂ \ {1}.
     This extends the zeta function to the entire complex plane except s = 1. -/
@@ -464,7 +463,24 @@ theorem zetaCPT_involution (s : ℂ) : zetaCPT (zetaCPT s) = s := by
 
 /-- The fixed points of the reflection are exactly the critical line -/
 theorem zetaCPT_fixed_iff_critical (s : ℂ) : 
-    zetaCPT s = Complex.conj s ↔ s.re = 1/2 := sorry
+    zetaCPT s = Complex.conj s ↔ s.re = 1/2 := by
+  dsimp [zetaCPT]
+  constructor
+  · intro h
+    -- 1 - s = conj s
+    -- 1 - (x + iy) = x - iy
+    -- 1 - x - iy = x - iy
+    -- 1 - x = x
+    -- 2x = 1
+    -- x = 1/2
+    apply Complex.ext_iff.1 at h
+    rcases h with ⟨hre, him⟩
+    simp at hre him
+    linarith
+  · intro h
+    apply Complex.ext
+    · simp; linarith
+    · simp
 
 /-- OFF-LINE ZEROS IMPLY ASYMMETRIC PRIME DISTRIBUTION
     
