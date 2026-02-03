@@ -9,4 +9,4 @@ require mathlib from git
 
 @[default_target]
 lean_lib RiemannHypothesis where
-  -- add library configuration options here
+  roots := #[`RiemannHypothesis, `PrimeSpectrum]
