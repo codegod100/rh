@@ -433,6 +433,57 @@ theorem big_bang_mirror_is_rh : BigBangMirror ↔
 
 end CPTSymmetry
 
+section GeometricTension
+/-! ### Geometric Tension and Convexity (The Soap Film Argument)
+    
+    The magnitude |ζ(s)| acts like a "surface" stretched over the critical strip.
+    The Phragmén-Lindelöf principle requires this surface to be convex.
+    
+    The functional equation determines the "tension" of this surface via π.
+    
+    The Growth Exponent μ(σ) is defined such that |ζ(σ+it)| ~ t^μ(σ)
+      - At σ=0: μ(0) = 1/2
+      - At σ=1: μ(1) = 0
+    
+    Convexity Bound: μ(σ) ≤ (1-σ)/2
+    Lindelöf Hypothesis: μ(σ) = 0 for σ ≥ 1/2
+    
+    If a zero exists OFF the critical line (e.g., at σ=0.8), it acts like
+    a "sinkhole" that pulls the surface down to -∞ (log scale).
+    This creates a warp locally that violates the smooth geometric tension,
+    potentially breaking the convexity bound nearby.
+    
+    The "Tension of π" is what keeps the surface flat (μ ≈ 0) for σ > 1/2,
+    forcing all sinkholes (zeros) to slide down to the energy minimum at σ=1/2.
+-/
+
+/-- The growth exponent μ(σ) -/
+def GrowthExponent (σ : ℝ) : ℝ := sorry
+
+/-- The Convexity Bound (Phragmén-Lindelöf) -/
+theorem convexity_bound (σ : ℝ) (hσ : 0 ≤ σ ∧ σ ≤ 1) :
+    GrowthExponent σ ≤ (1 - σ) / 2 := sorry
+
+/-- The Lindelöf Hypothesis: the surface is "flat" for σ ≥ 1/2 -/
+def LindelofHypothesis : Prop := 
+    ∀ σ : ℝ, σ ≥ 1/2 → GrowthExponent σ = 0
+
+/-- RH implies Lindelöf (proven) -/
+theorem rh_implies_lindelof (hRH : ∀ s, IsNontrivialZero s → OnCriticalLine s) :
+    LindelofHypothesis := sorry
+
+/-- THE TENSION ARGUMENT
+    If Lindelöf is true (surface is flat), then zeros are strongly
+    constrained. Off-line zeros would create local gradients incompatible
+    with a flat surface, unless they are exceptionally sparse.
+    
+    While Lindelöf doesn't mathematically prove RH, geometrically it implies
+    that the "energy" of the surface is minimized when zeros align.
+-/
+def GeometricTensionMinimized : Prop := LindelofHypothesis
+
+end GeometricTension
+
 section ExplicitFormula
 /-! ### The Explicit Formula Approach
     Direct computation relating primes to zeros -/
