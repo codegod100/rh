@@ -85,6 +85,27 @@ theorem zero_classification (s : ℂ) (hz : IsZetaZero s) (hpos : s.re > 0) :
   have hne := _root_.riemannZeta_ne_zero_of_one_le_re (s := s) hs'
   exact hne (by simpa [IsZetaZero] using hz)
 
+/-- Non-trivial zeros come in CPT pairs `s` and `1 - s`. -/
+theorem zeta_zero_pairing (s : ℂ) (h : IsNontrivialZero s) : IsZetaZero (1 - s) := by
+  have hs : ∀ n : ℕ, s ≠ -n := by
+    intro n hsn
+    have h_re : s.re = -(n : ℝ) := by
+      simp [hsn]
+    have hle : s.re ≤ 0 := by
+      have : (0 : ℝ) ≤ n := Nat.cast_nonneg n
+      linarith [h_re]
+    exact (not_lt_of_ge hle) h.2.1
+  have hs' : s ≠ 1 := by
+    intro h1
+    have : s.re = 1 := by simp [h1]
+    exact (ne_of_lt h.2.2) this
+  have hfe := riemannZeta_one_sub (s := s) hs hs'
+  have hz : riemannZeta s = 0 := by
+    simpa [IsZetaZero] using h.1
+  have : riemannZeta (1 - s) = 0 := by
+    simpa [hz] using hfe
+  exact this
+
 /-- The critical line is Re(s) = 1/2 -/
 def OnCriticalLine (s : ℂ) : Prop := s.re = 1/2
 
@@ -759,6 +780,95 @@ theorem explicit_formula_error_bound
 end ExplicitFormula
 
 /-! ## Part 7: Known Results (Proven) -/
+
+/-! ## Part 7a: Strong Growth Bounds (Targets) -/
+
+/-- A very strong target bound: uniform boundedness on the critical line. -/
+theorem bounded_on_critical_line :
+    ∃ C : ℝ, 0 < C ∧ ∀ t : ℝ, ‖riemannZeta ((1/2 : ℂ) + t * I)‖ ≤ C := sorry
+
+/-! ## Part 7b: Rigidity Targets (New Math) -/
+
+/-- New rigidity claim: strict log-convexity of the completed zeta along horizontal lines. -/
+theorem xi_log_strictly_convex_on_strip :
+    ∀ t : ℝ, StrictConvexOn ℝ (Set.Icc 0 1)
+      (fun σ : ℝ => Real.log ‖xiFunction (σ + t * I)‖) := sorry
+
+theorem strict_convex_midpoint_lt
+    (f : ℝ → ℝ)
+    (hconv : StrictConvexOn ℝ (Set.Icc 0 1) f)
+    (x y : ℝ)
+    (hx : x ∈ Set.Icc (0 : ℝ) 1)
+    (hy : y ∈ Set.Icc (0 : ℝ) 1)
+    (hxy : x ≠ y) :
+    f ((1 / 2 : ℝ) * x + (1 / 2 : ℝ) * y) < (1 / 2 : ℝ) * f x + (1 / 2 : ℝ) * f y := by
+  have hpos : (0 : ℝ) < (1 / 2 : ℝ) := by norm_num
+  have hsum : (1 / 2 : ℝ) + (1 / 2 : ℝ) = 1 := by norm_num
+  simpa [smul_eq_mul] using (hconv.2 hx hy hxy hpos hpos hsum)
+
+theorem xi_log_norm_eq_zero_of_zero (s : ℂ) (h : xiFunction s = 0) :
+    Real.log ‖xiFunction s‖ = 0 := by
+  have hnorm : ‖xiFunction s‖ = 0 := by
+    simp [h]
+  calc
+    Real.log ‖xiFunction s‖ = Real.log 0 := by rw [hnorm]
+    _ = 0 := by simp [Real.log_zero]
+
+theorem xi_zero_pairing (s : ℂ) (h : xiFunction s = 0) : xiFunction (1 - s) = 0 := by
+  calc
+    xiFunction (1 - s) = xiFunction s := by
+      symm
+      exact functional_equation s
+    _ = 0 := h
+
+theorem xi_log_even_im (σ t : ℝ) :
+    Real.log ‖xiFunction (σ + t * I)‖ = Real.log ‖xiFunction (σ + (-t) * I)‖ := by
+  sorry
+
+theorem xi_log_zero_at_pair
+    (σ t : ℝ)
+    (h_even : ∀ t σ : ℝ,
+      Real.log ‖xiFunction (σ + t * I)‖ = Real.log ‖xiFunction (σ + (-t) * I)‖)
+    (hzero : xiFunction ((σ : ℂ) + t * I) = 0) :
+    Real.log ‖xiFunction ((σ : ℂ) + t * I)‖ = 0 := by
+  simpa using xi_log_norm_eq_zero_of_zero ((σ : ℂ) + t * I) hzero
+
+theorem xi_log_zero_pair_values
+    (s : ℂ)
+    (h_even : ∀ t σ : ℝ,
+      Real.log ‖xiFunction (σ + t * I)‖ = Real.log ‖xiFunction (σ + (-t) * I)‖)
+    (hzero : xiFunction s = 0) :
+    let σ : ℝ := s.re
+    let t : ℝ := s.im
+    (Real.log ‖xiFunction ((σ : ℂ) + t * I)‖ = 0) ∧
+      (Real.log ‖xiFunction ((1 - σ : ℂ) + t * I)‖ = 0) := by
+  sorry
+
+theorem xi_log_zero_at_point (s : ℂ) (hzero : xiFunction s = 0) :
+    Real.log ‖xiFunction s‖ = 0 := by
+  exact xi_log_norm_eq_zero_of_zero s hzero
+
+theorem one_sub_repr (s : ℂ) :
+    let σ : ℝ := s.re
+    let t : ℝ := s.im
+    (1 - s) = (1 - σ : ℂ) + (-t) * I := by
+  intro σ t
+  have hs : s = (σ : ℂ) + t * I := by
+    simpa [σ, t] using (Complex.re_add_im s)
+  calc
+    1 - s = 1 - ((σ : ℂ) + t * I) := by simpa [hs]
+    _ = (1 - σ : ℂ) + (-t) * I := by ring
+
+/-- If log|xi| is strictly convex on [0,1], zeros must lie on σ=1/2. -/
+theorem strict_convexity_implies_RH
+    (hconv : ∀ t : ℝ, StrictConvexOn ℝ (Set.Icc 0 1)
+      (fun σ : ℝ => Real.log ‖xiFunction (σ + t * I)‖))
+    (hnonneg : ∀ t σ : ℝ, σ ∈ Set.Icc 0 1 → 0 ≤ Real.log ‖xiFunction (σ + t * I)‖)
+    (h_even : ∀ t σ : ℝ,
+      Real.log ‖xiFunction (σ + t * I)‖ = Real.log ‖xiFunction (σ + (-t) * I)‖)
+    (hzero : ∀ s : ℂ, IsNontrivialZero s → xiFunction s = 0) :
+    ∀ s : ℂ, IsNontrivialZero s → OnCriticalLine s := by
+  sorry
 
 /-- There are infinitely many zeros on the critical line (Hardy 1914) -/
 theorem infinitely_many_zeros_on_critical_line (hRH : RiemannHypothesisStatement) :
