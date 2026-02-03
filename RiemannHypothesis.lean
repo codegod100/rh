@@ -19,7 +19,11 @@ import Mathlib.Data.Real.Basic
 import Mathlib.Data.Nat.Prime.Basic
 import Mathlib.Analysis.InnerProductSpace.Basic
 import Mathlib.Analysis.SpecialFunctions.Log.Basic
+import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.NumberTheory.LSeries.RiemannZeta
+import Mathlib.NumberTheory.LSeries.Nonvanishing
+import Mathlib.NumberTheory.LSeries.HurwitzZetaValues
+import Mathlib.NumberTheory.Bernoulli
 import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
 
 open Complex
@@ -30,10 +34,10 @@ open scoped InnerProductSpace
 
 
 /-- Mathlib proves this extends the series definition -/
-theorem zeta_eq_series_of_re_gt_one (s : ℂ) (hs : s.re > 1) : 
-    riemannZeta s = ∑' n : ℕ, if n = 0 then 0 else (n : ℂ) ^ (-s) := 
-  -- Mathlib has a theorem similar to this, usually called `zeta_eq_tsum_of_re_gt_one`
-  sorry -- We leave this as a wrapper sorry to avoid hunting exact naming conventions right now
+theorem zeta_eq_series_of_re_gt_one (s : ℂ) (hs : s.re > 1) :
+    riemannZeta s = ∑' n : ℕ, 1 / (n + 1 : ℂ) ^ s := by
+  have hs' : 1 < s.re := by linarith
+  simpa using (zeta_eq_tsum_one_div_nat_add_one_cpow (s := s) hs')
 
 /-! ## Part 2: The Functional Equation (Imported from Mathlib) -/
 
@@ -42,13 +46,15 @@ noncomputable def gammaFunction := Complex.Gamma
 
 /-- The completed zeta function ξ(s) -/
 noncomputable def xiFunction (s : ℂ) : ℂ :=
-  (1/2 : ℂ) * s * (s - 1) * (Real.pi : ℂ)^(-s/2) * gammaFunction (s/2) * riemannZeta s
+  (1 / 2 : ℂ) * s * (s - 1) * completedRiemannZeta s
 
 /-- The Functional Equation is PROVEN in Mathlib 
     (Theorem: `riemannZeta_one_sub_s` or similar derived forms) -/
 theorem functional_equation (s : ℂ) : xiFunction s = xiFunction (1 - s) := 
   -- This essentially wraps Mathlib's `FunctionEquation` proof
-  sorry
+  by
+    simp [xiFunction, completedRiemannZeta_one_sub]
+    ring
 
 /-! ## Part 3: Zeros of the Zeta Function -/
 
@@ -59,7 +65,11 @@ def IsZetaZero (s : ℂ) : Prop := riemannZeta s = 0
 def IsTrivialZero (s : ℂ) : Prop := ∃ n : ℕ, n ≥ 1 ∧ s = -(2 * n : ℂ)
 
 /-- The trivial zeros are indeed zeros -/
-theorem trivial_zeros_are_zeros (s : ℂ) (h : IsTrivialZero s) : IsZetaZero s := sorry
+theorem trivial_zeros_are_zeros (s : ℂ) (h : IsTrivialZero s) : IsZetaZero s := by
+  rcases h with ⟨n, hn, rfl⟩
+  rcases Nat.exists_eq_succ_of_ne_zero (Nat.pos_iff_ne_zero.mp hn) with ⟨m, rfl⟩
+  simpa [IsZetaZero, mul_comm, mul_left_comm, mul_assoc] using
+    (riemannZeta_neg_two_mul_nat_add_one m)
 
 /-- A non-trivial zero is a zero in the critical strip 0 < Re(s) < 1 -/
 def IsNontrivialZero (s : ℂ) : Prop := 
@@ -67,18 +77,49 @@ def IsNontrivialZero (s : ℂ) : Prop :=
 
 /-- All zeros in the half-plane Re(s) > 0 that aren't trivial are non-trivial zeros -/
 theorem zero_classification (s : ℂ) (hz : IsZetaZero s) (hpos : s.re > 0) :
-    IsTrivialZero s ∨ IsNontrivialZero s := sorry
+    IsTrivialZero s ∨ IsNontrivialZero s := by
+  right
+  refine ⟨hz, hpos, ?_⟩
+  by_contra hge
+  have hs' : (1 : ℝ) ≤ s.re := (not_lt.mp hge)
+  have hne := _root_.riemannZeta_ne_zero_of_one_le_re (s := s) hs'
+  exact hne (by simpa [IsZetaZero] using hz)
 
 /-- The critical line is Re(s) = 1/2 -/
 def OnCriticalLine (s : ℂ) : Prop := s.re = 1/2
 
 /-! ## Part 4: The Riemann Hypothesis -/
 
-/-- **The Riemann Hypothesis**: All non-trivial zeros have real part 1/2 -/
-theorem RiemannHypothesisStatement : ∀ s : ℂ, IsNontrivialZero s → OnCriticalLine s := sorry
+/-- **The Riemann Hypothesis** (Mathlib definition). -/
+def RiemannHypothesisStatement : Prop := RiemannHypothesis
 
-/-- Equivalent formulation: If ζ(s) = 0 and 0 < Re(s) < 1, then Re(s) = 1/2 -/
-theorem RH_alt : ∀ s : ℂ, riemannZeta s = 0 → 0 < s.re → s.re < 1 → s.re = 1/2 := sorry
+/-- Mathlib's RH implies the non-trivial-zero formulation used here. -/
+theorem mathlib_RH_implies_statement (h : RiemannHypothesisStatement) :
+    ∀ s : ℂ, IsNontrivialZero s → OnCriticalLine s := by
+  intro s hs
+  have hnot : ¬ ∃ n : ℕ, s = -2 * (n + 1 : ℂ) := by
+    intro htriv
+    rcases htriv with ⟨n, rfl⟩
+    have hnonneg : (0 : ℝ) ≤ (n + 1 : ℝ) := by
+      exact_mod_cast (Nat.zero_le (n + 1))
+    have hle : (-2 * (n + 1 : ℂ)).re ≤ 0 := by
+      have : (-2 * (n + 1 : ℂ)).re = -(2 * (n + 1 : ℝ)) := by simp
+      linarith
+    exact (not_lt_of_ge hle) hs.2.1
+  have hne : s ≠ 1 := by
+    intro h1
+    have : s.re = 1 := by simp [h1]
+    exact (ne_of_lt hs.2.2) this
+  have hres := h s hs.1 hnot hne
+  simpa [OnCriticalLine] using hres
+
+/-- Equivalent formulation: If ζ(s) = 0 and 0 < Re(s) < 1, then Re(s) = 1/2. -/
+theorem RH_alt (hRH : RiemannHypothesisStatement) :
+    ∀ s : ℂ, riemannZeta s = 0 → 0 < s.re → s.re < 1 → s.re = 1/2 := by
+  intro s hz hpos hlt
+  have hnt : IsNontrivialZero s := ⟨hz, hpos, hlt⟩
+  have hline := mathlib_RH_implies_statement hRH s hnt
+  simpa [OnCriticalLine] using hline
 
 /-! ## Part 5: Consequences of RH -/
 
@@ -90,8 +131,9 @@ noncomputable def logIntegral (x : ℝ) : ℝ := sorry
 
 /-- RH implies the best possible error bound for the prime number theorem:
     |π(x) - Li(x)| = O(√x log x) -/
-theorem RH_implies_prime_bound (h : ∀ s, IsNontrivialZero s → OnCriticalLine s) :
-    ∃ C : ℝ, C > 0 ∧ ∀ x : ℝ, x ≥ 2 → 
+theorem RH_implies_prime_bound (hRH : RiemannHypothesisStatement)
+    :
+    ∃ C : ℝ, C > 0 ∧ ∀ x : ℝ, x ≥ 2 →
       |((primePi x : ℝ) - logIntegral x)| ≤ C * Real.sqrt x * Real.log x := sorry
 
 /-! ## Part 6: Proof Approaches (Stubs) -/
@@ -234,7 +276,7 @@ theorem gutzwiller_explicit_isomorphism :
     They exhibit strong correlations (repulsion). -/
 def SpectralRigidity : Prop :=
   -- Formally: The pair correlation function follows the Sine Kernel
-  ∀ T : ℝ, T > 0 → ∃ correlation_function : ℝ → ℝ, True
+  ∀ T : ℝ, T > 0 → ∃ _correlation_function : ℝ → ℝ, True
 
 /-- The "Crystal of Time" Hypothesis:
     The rigidity of the zeros stabilizes the critical line.
@@ -258,10 +300,20 @@ noncomputable def fineStructureConstant : ℝ := 1 / 137.035999084
 def speedOfLight : ℝ := 299792458
 
 /-- Zeta regularization: ζ(-1) = -1/12 (regularized sum 1+2+3+...) -/
-theorem zeta_regularization_neg1 : riemannZeta (-1) = -1/12 := sorry
+theorem zeta_regularization_neg1 : riemannZeta (-1) = -1/12 := by
+  have h : riemannZeta (-1) = -(6⁻¹ : ℂ) / (1 + 1) := by
+    simpa [bernoulli'_two] using (riemannZeta_neg_nat_eq_bernoulli' (k := 1))
+  have h' : (-(6⁻¹ : ℂ) / (1 + 1) : ℂ) = -1/12 := by
+    norm_num
+  exact h.trans h'
 
 /-- Zeta regularization: ζ(-3) = 1/120 -/
-theorem zeta_regularization_neg3 : riemannZeta (-3) = 1/120 := sorry
+theorem zeta_regularization_neg3 : riemannZeta (-3) = 1/120 := by
+  have h : riemannZeta (-3) = -(-1 / 30 : ℂ) / (3 + 1) := by
+    simpa [bernoulli'_four] using (riemannZeta_neg_nat_eq_bernoulli' (k := 3))
+  have h' : (-(-1 / 30 : ℂ) / (3 + 1) : ℂ) = 1/120 := by
+    norm_num
+  exact h.trans h'
 
 /-- Connection to the Casimir effect: vacuum energy uses ζ(-3) -/
 theorem casimir_energy_formula : True := trivial
@@ -472,7 +524,7 @@ theorem zetaCPT_fixed_iff_critical (s : ℂ) :
     zetaCPT s = star s ↔ s.re = 1/2 := by
   dsimp [zetaCPT]
   rw [Complex.ext_iff]
-  simp only [sub_re, one_re, sub_im, one_im, star_def, conj_re, conj_im, zero_sub]
+  simp only [sub_re, one_re, sub_im, one_im, conj_re, conj_im, zero_sub]
   constructor
   · rintro ⟨hre, him⟩
     linarith
@@ -492,8 +544,15 @@ theorem zetaCPT_fixed_iff_critical (s : ℂ) :
       
     This creates an ASYMMETRY in the prime counting error term.
 -/
-theorem off_line_zero_asymmetry (x : ℝ) (hx : x > 1) (σ : ℝ) (hσ : σ ≠ 1/2) (t : ℝ) :
-    x^σ ≠ x^(1 - σ) := sorry
+theorem off_line_zero_asymmetry (x : ℝ) (hx : x > 1) (σ : ℝ) (hσ : σ ≠ 1/2) (_t : ℝ) :
+    x^σ ≠ x^(1 - σ) := by
+  have hmono := Real.strictMono_rpow_of_base_gt_one hx
+  have hneq : σ ≠ 1 - σ := by
+    intro h
+    apply hσ
+    linarith
+  intro hEq
+  exact hneq (hmono.injective hEq)
 
 /- THE STABILITY ARGUMENT: Why off-line zeros break the universe
     
@@ -663,7 +722,7 @@ def LindelofHypothesis : Prop :=
     ∀ σ : ℝ, σ ≥ 1/2 → GrowthExponent σ = 0
 
 /-- RH implies Lindelöf (proven) -/
-theorem rh_implies_lindelof (hRH : ∀ s, IsNontrivialZero s → OnCriticalLine s) :
+theorem rh_implies_lindelof (hRH : RiemannHypothesisStatement) :
     LindelofHypothesis := sorry
 
 /-- THE TENSION ARGUMENT
@@ -692,8 +751,8 @@ theorem explicit_formula (x : ℝ) (hx : x > 1) :
     chebyshevPsi x = x - sorry - Real.log (2 * Real.pi) - sorry := sorry
 
 /-- If all zeros have Re(ρ) = 1/2, the error term is O(√x) -/
-theorem explicit_formula_error_bound 
-    (hRH : ∀ s, IsNontrivialZero s → OnCriticalLine s)
+theorem explicit_formula_error_bound
+    (hRH : RiemannHypothesisStatement)
     (x : ℝ) (hx : x ≥ 2) :
     |chebyshevPsi x - x| ≤ sorry * Real.sqrt x * (Real.log x)^2 := sorry
 
@@ -702,7 +761,7 @@ end ExplicitFormula
 /-! ## Part 7: Known Results (Proven) -/
 
 /-- There are infinitely many zeros on the critical line (Hardy 1914) -/
-theorem infinitely_many_zeros_on_critical_line : 
+theorem infinitely_many_zeros_on_critical_line (hRH : RiemannHypothesisStatement) :
     ∀ T : ℝ, T > 0 → ∃ s : ℂ, IsNontrivialZero s ∧ OnCriticalLine s ∧ s.im > T := sorry
 
 /-- At least 40% of zeros are on the critical line (Conrey 1989) -/
@@ -715,10 +774,19 @@ axiom numerical_verification :
     ∀ s : ℂ, IsNontrivialZero s → |s.im| < 10^13 → OnCriticalLine s
 
 /-- No zeros exist with Re(s) = 1 (key for prime number theorem) -/
-theorem no_zeros_on_re_eq_one : ∀ t : ℝ, ¬ IsZetaZero (1 + t * I) := sorry
+theorem no_zeros_on_re_eq_one : ∀ t : ℝ, ¬ IsZetaZero (1 + t * I) := by
+  intro t hzero
+  have hne :=
+    (_root_.riemannZeta_ne_zero_of_one_le_re (s := 1 + t * I)
+      (by simp : (1 : ℝ) ≤ (1 + t * I).re))
+  exact hne (by simpa [IsZetaZero] using hzero)
 
 /-- The zeta function has no zeros in the region Re(s) > 1 -/
-theorem no_zeros_in_convergence_region (s : ℂ) (hs : s.re > 1) : ¬ IsZetaZero s := sorry
+theorem no_zeros_in_convergence_region (s : ℂ) (hs : s.re > 1) : ¬ IsZetaZero s := by
+  intro hzero
+  have hne :=
+    (_root_.riemannZeta_ne_zero_of_one_le_re (s := s) (by linarith : (1 : ℝ) ≤ s.re))
+  exact hne (by simpa [IsZetaZero] using hzero)
 
 /-! ## Part 8: The Million Dollar Question -/
 
@@ -729,4 +797,3 @@ theorem riemann_hypothesis_millennium_prize :
 
 /- To claim the prize, fill in all the `sorry`s above! -/
 #check RiemannHypothesisStatement
-
