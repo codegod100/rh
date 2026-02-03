@@ -137,20 +137,75 @@ theorem hilbert_polya_approach
 end HilbertPolya
 
 section BerryKeating
-/-! ### The Berry-Keating Hamiltonian
-    H = xp (position × momentum, symmetrized) -/
+section ClockDynamics
+/-! ### The Clock Dynamics: Berry-Keating and the Logic of Time
+    
+    If the "Mirror" (Re(s)=1/2) is the Geometry, and ξ(s)=ξ(1-s) is the Symmetry,
+    then we need a DYNAMIC engine—a "Clock"—to generate the zeros.
+    
+    The Berry-Keating Hamiltonian H = xp is this Clock.
+    
+    1. Classical Dynamics: x(t) = x₀ e^t, p(t) = p₀ e^-t
+       - Hyperbolic dynamics on the phase space (x,p)
+       - Periodic orbits correspond to PRIMES with period T_p = log(p)
+    
+    2. Quantum Dynamics: H = (1/2)(xp + px)
+       - The energy eigenvalues E_n are conjectured to be the zeros γ_n
+       - E_n = γ_n implies the "energies" of the system are the zeta zeros
+    
+    3. The Observer (Self-Adjointness):
+       - If H is self-adjoint (observable), eigenvalues strictly Real
+       - This forces zeros to lie on the line (RH)
+       - The "Observer" is the physical constraint that makes energy real.
+-/
 
-/-- The Berry-Keating Hamiltonian: H = (xp + px)/2 -/
--- In a proper formalization this would involve unbounded operators
--- on L²(ℝ) with appropriate domain considerations
-def berryKeatingHamiltonian : sorry := sorry
+/-- The Phase Space of the Clock: position and momentum -/
+structure PhaseSpace where
+  x : ℝ
+  p : ℝ
 
-/-- The regularized version of Berry-Keating -/
-def berryKeatingRegularized : sorry := sorry
+/-- The Classical Hamiltonian H = xp -/
+def classicalDynamics (state : PhaseSpace) : ℝ := state.x * state.p
 
-theorem berry_keating_approach : sorry := sorry
+/-- The "Prime Orbits" Conjecture:
+    The classical system has closed orbits with periods T = log(p)
+    for each prime p. This links the "Time" of the clock directly to the
+    "Arithmetic" of the primes. -/
+def PrimeOrbit (p : ℕ) (period : ℝ) : Prop := 
+  p.Prime ∧ period = Real.log p
 
-end BerryKeating
+/-- The Quantum Hamiltonian Operator H = (xp + px)/2 -/
+-- Represented abstractly as an operator on a Hilbert space
+variable (HilbertSpace : Type*) [NormedAddCommGroup HilbertSpace] [InnerProductSpace ℂ HilbertSpace]
+
+/-- The Hamiltonian Operator H -/
+variable (Hamiltonian : HilbertSpace →L[ℂ] HilbertSpace)
+
+/-- The "Spectral Conjecture" (Berry-Keating / Hilbert-Pólya):
+    The eigenvalues of H are exactly the zeros γ_n of ζ(1/2 + iE). -/
+def SpectralRealization (H : HilbertSpace →L[ℂ] HilbertSpace) : Prop :=
+  ∀ γ : ℝ, (∃ ψ : HilbertSpace, ψ ≠ 0 ∧ H ψ = γ • ψ) ↔ 
+           IsNontrivialZero ((1/2 : ℂ) + γ * Complex.I)
+
+/-- THE OBSERVER'S CONSTRAINT:
+    Observation requires a Self-Adjoint (Hermitian) operator.
+    Real measurements correspond to Real eigenvalues.
+    
+    If the "Universal Clock" is observable, RH must be true.
+-/
+theorem observer_implies_rh 
+    (H : HilbertSpace →L[ℂ] HilbertSpace)
+    (h_observable : ∀ u v : HilbertSpace, ⟪H u, v⟫_ℂ = ⟪u, H v⟫_ℂ) -- Self-adjoint
+    (h_spectral : SpectralRealization HilbertSpace H) :            -- Matches zeros
+    ∀ s : ℂ, IsNontrivialZero s → OnCriticalLine s := sorry
+
+/-- The "Time Evolution" of the Primes:
+    The primes are the "heartbeat" of this clock.
+    The zeros are the "frequencies" of the music it plays.
+    The Observer (The Self) ensures the music is harmonious (Real). -/
+def UniversalClock := SpectralRealization HilbertSpace Hamiltonian
+
+end ClockDynamics
 
 section ZetaRegularization
 /-! ### Zeta Function Regularization (Physics Connection)
