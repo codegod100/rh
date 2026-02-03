@@ -17,7 +17,8 @@ The proof is built on a hierarchy of implications, each formalized in Lean 4:
 ### Key Files
 *   `RiemannHypothesis.lean`: The main theorem file. Definies the Zeta Potential, Flux, and the final conditional proof.
 *   `PrimeSpectrum.lean`: The analytic engine. Formalizes the **Uncertainty Principle** argument: Discreteness (Jump Discontinuities) $\implies$ Wide Spectrum (No Gaps in Zeros). This provides the rigorous mathematical backing for the "Rigidity" claims.
-*   `ExplicitFormula.lean`: The "Standard Math" bridge. Formally states the **Explicit Formula** relating Chebyshev's $\psi(x)$ to the Zeta Zeros, and the equivalence theorem (Von Koch) tying the error term to RH. This enforces the "horizontal" constraint missing from pure rigidity arguments.
+*   `ExplicitFormula.lean`: The "Standard Math" bridge. Formally states the **Explicit Formula** relating Chebyshev's $\psi(x)$ to the Zeta Zeros, and the equivalence theorem (Von Koch) tying the error term to RH.
+*   `TraceFormula.lean`: The **Quantum Chaos** dictionary. Formalizes the relationship between the **Riemann Explicit Formula** and the **Gutzwiller Trace Formula**, identifying Primes as Periodic Orbits with period $\log p$ and stability exponent $\lambda=1$.
 
 ### Status
 *   ✅ **Formalized**: The logical chain is complete and compiles.
