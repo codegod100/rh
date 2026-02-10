@@ -9,4 +9,4 @@ require mathlib from git
 
 @[default_target]
 lean_lib RiemannHypothesis where
-  roots := #[`RiemannHypothesis, `PrimeSpectrum, `ExplicitFormula, `TraceFormula, `PrimeEntropy, `RatiosConjecture]
+  roots := #[`RiemannHypothesis, `PrimeSpectrum, `ExplicitFormula, `TraceFormula, `PrimeEntropy, `RatiosConjecture, `Undecidability, `RHMetatheory, `RiemannHypothesisUndecidability]
